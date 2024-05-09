@@ -12,6 +12,8 @@ public class PlayerControl : MonoBehaviour
 
     public float speed = 20;
     private float xMove;
+    private float yMove;
+
     private bool jumpFlag;
     public float jumpPower = 10;
 
@@ -40,6 +42,7 @@ public class PlayerControl : MonoBehaviour
     void Update()
     {
         xMove = Input.GetAxisRaw("Horizontal");
+        yMove = Input.GetAxisRaw("Vertical");
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -67,7 +70,8 @@ public class PlayerControl : MonoBehaviour
 
     private void FixedUpdate()
     {
-        rb.velocity = new Vector2(xMove * speed * Time.deltaTime, rb.velocity.y);
+        //rb.velocity = new Vector2(xMove * speed * Time.deltaTime, rb.velocity.y);
+        rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
 
         if (jumpFlag)
         {
