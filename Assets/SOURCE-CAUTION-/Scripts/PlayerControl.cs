@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -10,7 +11,7 @@ public class PlayerControl : MonoBehaviour
     public GameObject tailTipObject; // Reference to the object with TailTip control script
     private HingeJoint2D tailTipHingeJoint; // Reference to the Hinge Joint 2D component on TailTip object
 
-    public float speed = 20;
+    public float speed = 200;
     private float xMove;
     private float yMove;
 
@@ -24,6 +25,10 @@ public class PlayerControl : MonoBehaviour
     public bool isControlEnabled = false;
     private bool isStuckToCeiling = true;
 
+    private int specialCoinsCount = 0;
+    private int timeDashed = 0;
+    private int maxTimeDash = 10;
+    private int CoinCount;
 
     // Start is called before the first frame update
     void Start()
@@ -32,10 +37,6 @@ public class PlayerControl : MonoBehaviour
         bodyObject = GameObject.Find("Body");
         tailTipObject = GameObject.Find("TailTip");
         tailTipHingeJoint = tailTipObject.GetComponent<HingeJoint2D>();
-
-        // Initially, enable the Body control script and disable the TailTip HingeJoint2D
-        //EnableBodyControl();
-        //DisableTailTipHingeJoint();
     }
 
     // Update is called once per frame
@@ -43,45 +44,41 @@ public class PlayerControl : MonoBehaviour
     {
         xMove = Input.GetAxisRaw("Horizontal");
         yMove = Input.GetAxisRaw("Vertical");
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            if (isGrounded || jumpCount < maxJumpCount) // if isGrounded = T or jumped < 2 times
-            {
-                jumpFlag = true;
-                jumpCount++;
-                isGrounded = false; // Will be reset to true when the player touches the ground again
-
-                /*if (jumpCount >= maxJumpCount)
-                {
-                    isGrounded = false; // Wiyll be reset to true when the player touches the ground again
-                }*/
-            }
-        }
-
-
+        //
+        //
+        //
+        /*
         if (Input.GetKeyDown(KeyCode.J))
         {
             ToggleStuckToCeiling();
             ToggleFunctionality();
-        }
-
+        }*/
+        //
+        ///
+        //
     }
 
     private void FixedUpdate()
     {
-        //rb.velocity = new Vector2(xMove * speed * Time.deltaTime, rb.velocity.y);
-        rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
+        rb.velocity = new Vector2(xMove * speed * Time.deltaTime, rb.velocity.y);
 
-        if (jumpFlag)
+        //rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
+
+        if (specialCoinsCount == 3 && Input.GetKey(KeyCode.Space))
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpPower);
-            jumpFlag = false;
+            rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
+            speed = 850; 
+        }
+        else if (Input.GetKey(KeyCode.Space) && CoinCount <= maxTimeDash)
+        {
+            rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
+            speed = 400;
+            timeDashed++;
+            CoinCount--;
         }
 
-
     }
-
+    /*
     private void ToggleStuckToCeiling()
     {
         isStuckToCeiling = !isStuckToCeiling;
@@ -109,7 +106,6 @@ public class PlayerControl : MonoBehaviour
             DisableTailTipControl();
         }
     }
-
 
     private void EnableBodyControl()
     {
@@ -174,14 +170,33 @@ public class PlayerControl : MonoBehaviour
             tailTipHingeJoint.enabled = false;
         }
     }
-
-
+    */
+    /// <summary>
+    ///
+    /// 
+    /// </summary>
+    /// <param name="collision"></param>
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.collider.CompareTag("Ground") && !isGrounded)
         {
             isGrounded = true;
             jumpCount = 0; // Reset jump count
+        }
+
+    }
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Coin"))
+        {
+            Destroy(other.gameObject);
+            CoinCount++;
+        }
+
+        if (other.gameObject.CompareTag("SpecialCoin"))
+        {
+            Destroy(other.gameObject);
+            specialCoinsCount++;
         }
     }
 
@@ -191,8 +206,6 @@ public class PlayerControl : MonoBehaviour
         {
             isGrounded = false;
         }
-
-
     }
 
 }
