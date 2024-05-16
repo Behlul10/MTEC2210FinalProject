@@ -14,6 +14,7 @@ public class PlayerControl : MonoBehaviour
     public float speed = 200;
     private float xMove;
     private float yMove;
+    bool quit = false;
 
     private bool jumpFlag;
     public float jumpPower = 10;
@@ -44,6 +45,13 @@ public class PlayerControl : MonoBehaviour
     {
         xMove = Input.GetAxisRaw("Horizontal");
         yMove = Input.GetAxisRaw("Vertical");
+        quit = Input.GetKey(KeyCode.Escape);
+
+        if(quit)
+        {
+            Application.Quit();
+        }
+
         //
         //
         //
