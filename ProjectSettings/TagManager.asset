@@ -7,6 +7,7 @@ TagManager:
   - Ground
   - Coin
   - SpecialCoin
+  - CoinCollector
   layers:
   - Default
   - TransparentFX

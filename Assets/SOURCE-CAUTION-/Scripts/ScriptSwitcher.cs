@@ -18,6 +18,11 @@ public class ScriptSwitcher : MonoBehaviour
         bodyObject = GameObject.Find("Body");
         tailTipObject = GameObject.Find("TailTip");
         tailTipHingeJoint = tailTipObject.GetComponent<HingeJoint2D>();
+
+        // Ensure body control is enabled and tail tip control is disabled at start
+        EnableBodyControl();
+        DisableTailTipControl();
+
     }
 
     void Update()

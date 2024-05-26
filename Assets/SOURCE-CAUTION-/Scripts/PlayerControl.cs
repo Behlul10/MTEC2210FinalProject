@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
-
 
 public class PlayerControl : MonoBehaviour
 {
@@ -11,25 +11,19 @@ public class PlayerControl : MonoBehaviour
     public GameObject tailTipObject; // Reference to the object with TailTip control script
     private HingeJoint2D tailTipHingeJoint; // Reference to the Hinge Joint 2D component on TailTip object
 
+    private int SpecialCoinCount = 0;
+
     public float speed = 200;
     private float xMove;
     private float yMove;
     bool quit = false;
 
-    private bool jumpFlag;
-    public float jumpPower = 10;
+    public TextMeshProUGUI coinText;
+    public TextMeshProUGUI specialCoinText;
 
-    private int jumpCount = 0;
-    private int maxJumpCount = 10;
-    private bool isGrounded = true;
 
-    public bool isControlEnabled = false;
-    private bool isStuckToCeiling = true;
-
-    private int specialCoinsCount = 0;
-    private int timeDashed = 0;
-    private int maxTimeDash = 10;
-    private int CoinCount;
+    public AudioClip clip;
+    AudioSource audioSource;
 
     // Start is called before the first frame update
     void Start()
@@ -38,185 +32,155 @@ public class PlayerControl : MonoBehaviour
         bodyObject = GameObject.Find("Body");
         tailTipObject = GameObject.Find("TailTip");
         tailTipHingeJoint = tailTipObject.GetComponent<HingeJoint2D>();
+
+        // Ensure TextMeshPro components are assigned
+        if (coinText == null)
+        {
+            coinText = GameObject.Find("CoinText").GetComponent<TextMeshProUGUI>();
+            Debug.Log("coinText assigned via GameObject.Find");
+        }
+        else
+        {
+            Debug.Log("coinText assigned via Inspector");
+        }
+
+        if (specialCoinText == null)
+        {
+            specialCoinText = GameObject.Find("SpecialCoinText").GetComponent<TextMeshProUGUI>();
+            Debug.Log("specialCoinText assigned via GameObject.Find");
+        }
+        else
+        {
+            Debug.Log("specialCoinText assigned via Inspector");
+        }
+
+        // Ensure the text fields are updated initially
+        UpdateCoinText();
+        UpdateSpecialCoinText();
+
+        // Subscribe to the coin and special coin count changed events
+        CoinManager.Instance.OnCoinCountChanged += UpdateCoinText;
+        CoinManager.Instance.OnSpecialCoinCountChanged += UpdateSpecialCoinText;
+
+
+        //audio
+        audioSource = GetComponent<AudioSource>();
+
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (!enabled) return; // Check if this script is enabled
+
         xMove = Input.GetAxisRaw("Horizontal");
         yMove = Input.GetAxisRaw("Vertical");
-        quit = Input.GetKey(KeyCode.Escape);
 
-        if(quit)
+        // Quit function
+        quit = Input.GetKey(KeyCode.Escape);
+        if (quit)
         {
             Application.Quit();
         }
-
-        //
-        //
-        //
-        /*
-        if (Input.GetKeyDown(KeyCode.J))
-        {
-            ToggleStuckToCeiling();
-            ToggleFunctionality();
-        }*/
-        //
-        ///
-        //
     }
 
     private void FixedUpdate()
     {
-        rb.velocity = new Vector2(xMove * speed * Time.deltaTime, rb.velocity.y);
+        if (!enabled) return; // Check if this script is enabled
 
-        //rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
+        rb.velocity = new Vector2(xMove * speed * Time.deltaTime, speed * yMove * Time.deltaTime);
 
-        if (specialCoinsCount == 3 && Input.GetKey(KeyCode.Space))
-        {
-            rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
-            speed = 850; 
-        }
-        else if (Input.GetKey(KeyCode.Space) && CoinCount <= maxTimeDash)
-        {
-            rb.velocity = new Vector2(xMove * speed * Time.deltaTime, yMove * speed * Time.deltaTime);
-            speed = 400;
-            timeDashed++;
-            CoinCount--;
-        }
+  
 
-    }
-    /*
-    private void ToggleStuckToCeiling()
-    {
-        isStuckToCeiling = !isStuckToCeiling;
-        if (isStuckToCeiling)
+        if (Input.GetKey(KeyCode.Space))
         {
-            EnableBodyControl();
-            DisableTailTipHingeJoint();
-        }
-        else
-        {
-            EnableTailTipControl();
-            EnableTailTipHingeJoint();
-        }
-    }
-    private void ToggleFunctionality()
-    {
-        if (isStuckToCeiling)
-        {
-            DisableBodyControl();
-            EnableTailTipControl();
-        }
-        else
-        {
-            EnableBodyControl();
-            DisableTailTipControl();
-        }
-    }
-
-    private void EnableBodyControl()
-    {
-        if (bodyObject != null)
-        {
-            PlayerControl bodyControl = bodyObject.GetComponent<PlayerControl>();
-            if (bodyControl != null)
+            if (CoinManager.Instance.SpecialCoinCount == 3)
             {
-                bodyControl.enabled = true;
-            }
+                speed = 850;
+            } else if (SpecialCoinCount < 3) { speed = 550; }
         }
     }
 
-    private void DisableBodyControl()
-    {
-        if (bodyObject != null)
-        {
-            PlayerControl bodyControl = bodyObject.GetComponent<PlayerControl>();
-            if (bodyControl != null)
-            {
-                bodyControl.enabled = false;
-            }
-        }
-    }
-
-    private void EnableTailTipControl()
-    {
-        if (tailTipObject != null)
-        {
-            PlayerControl tailTipControl = tailTipObject.GetComponent<PlayerControl>();
-            if (tailTipControl != null)
-            {
-                tailTipControl.enabled = true;
-            }
-        }
-    }
-
-    private void DisableTailTipControl()
-    {
-        if (tailTipObject != null)
-        {
-            PlayerControl tailTipControl = tailTipObject.GetComponent<PlayerControl>();
-            if (tailTipControl != null)
-            {
-                tailTipControl.enabled = false;
-            }
-        }
-    }
-
-    private void EnableTailTipHingeJoint()
-    {
-        if (tailTipHingeJoint != null)
-        {
-            tailTipHingeJoint.enabled = true;
-        }
-    }
-
-    private void DisableTailTipHingeJoint()
-    {
-        if (tailTipHingeJoint != null)
-        {
-            tailTipHingeJoint.enabled = false;
-        }
-    }
-    */
-    /// <summary>
-    ///
-    /// 
-    /// </summary>
-    /// <param name="collision"></param>
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.collider.CompareTag("Ground") && !isGrounded)
-        {
-            isGrounded = true;
-            jumpCount = 0; // Reset jump count
-        }
-
-    }
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.gameObject.CompareTag("Coin"))
         {
-            Destroy(other.gameObject);
-            CoinCount++;
+            //play audio when detecting coin
+            audioSource.PlayOneShot(clip);
+
+            Debug.Log("Coin collected by: " + gameObject.name); // Log which object collected the coin
+            Debug.Log("speed when coin: " + speed);
+
+            Coin coin = other.gameObject.GetComponent<Coin>();
+            if (coin != null && !coin.isCollected)
+            {
+                coin.isCollected = true;
+                StartCoroutine(CollectCoin(other.gameObject));
+            }
         }
 
         if (other.gameObject.CompareTag("SpecialCoin"))
         {
-            Destroy(other.gameObject);
-            specialCoinsCount++;
+            audioSource.PlayOneShot(clip);
+
+            SpecialCoinCount++;
+            Debug.Log("Special coin collected by: " + gameObject.name); // Log which object collected the special coin
+            Debug.Log("speed when special coin: " + speed);
+            SpecialCoin specialCoin = other.gameObject.GetComponent<SpecialCoin>();
+            if (specialCoin != null && !specialCoin.isCollected)
+            {
+                specialCoin.isCollected = true;
+                StartCoroutine(CollectSpecialCoin(other.gameObject));
+            }
         }
     }
 
-    private void OnCollisionExit2D(Collision2D collision)
+    private IEnumerator CollectCoin(GameObject coin)
     {
-        if (collision.collider.CompareTag("Ground"))
+        Debug.Log("CollectCoin coroutine started for: " + coin.name);
+        CoinManager.Instance.AddCoin();
+        yield return null; // Wait for the end of the frame
+        Destroy(coin);
+    }
+
+    private IEnumerator CollectSpecialCoin(GameObject specialCoin)
+    {
+        Debug.Log("CollectSpecialCoin coroutine started for: " + specialCoin.name);
+        CoinManager.Instance.AddSpecialCoin();
+        yield return null; // Wait for the end of the frame
+        Destroy(specialCoin);
+    }
+
+    private void UpdateCoinText()
+    {
+        if (coinText != null)
         {
-            isGrounded = false;
+            coinText.text = "Coins: " + CoinManager.Instance.CoinCount;
+            Debug.Log("Coin text updated to: " + CoinManager.Instance.CoinCount);
+        }
+        else
+        {
+            Debug.LogWarning("coinText is not assigned!");
         }
     }
 
+    private void UpdateSpecialCoinText()
+    {
+        if (specialCoinText != null)
+        {
+            specialCoinText.text = "Special Coins: " + CoinManager.Instance.SpecialCoinCount;
+            Debug.Log("Special coin text updated to: " + CoinManager.Instance.SpecialCoinCount);
+        }
+        else
+        {
+            Debug.LogWarning("specialCoinText is not assigned!");
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Unsubscribe from the events when the object is destroyed
+        CoinManager.Instance.OnCoinCountChanged -= UpdateCoinText;
+        CoinManager.Instance.OnSpecialCoinCountChanged -= UpdateSpecialCoinText;
+    }
 }
-
-
-
